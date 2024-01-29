@@ -14,6 +14,8 @@ and [`asv_wave_sim`](https://github.com/srmainwaring/asv_wave_sim) projects.
 The model has been scaled by a factor of 3.2 to have a
 simulated LOA of approx. 2.4m.
 
+This repository is a fork of Rhys Mainwaring's original Racing Sparrow 750 simulation, found [here](https://github.com/srmainwaring/rs750).  It is being modified to support the Green Energy Ship project, adding Gazebo plugins to simulate a hydrokinetic turbine and additional control logic to support mission-level simulation.
+
 ## Dependencies
 
 You will need a working installation of
@@ -29,12 +31,18 @@ The model uses plugins from the marine simulation libraries
 and is controlled using ArduPilot which requires the
 [`ardupilot_gazebo`](https://github.com/ArduPilot/ardupilot_gazebo) plugin.
 
+You will need a working installation of [ArduPilot](https://ardupilot.org/dev/docs/building-setup-linux.html) on your system to control the sailboat.
+
 ## Installation
 
 Create and configure a colcon workspace, clone and build the repo:
 
 ```bash
 mkdir -p ~/gz_ws/src
+
+# Install repo dependencies
+sudo apt update
+sudo apt install libgz-sim7-dev rapidjson-dev libcgal-dev libfftw3-dev
 
 # Clone dependencies
 cd ~/gz_ws/src
@@ -43,11 +51,14 @@ git clone https://github.com/srmainwaring/asv_wave_sim.git
 git clone https://github.com/ArduPilot/ardupilot_gazebo.git
 
 # Clone this repo
-git clone https://github.com/srmainwaring/rs750.git
+git clone https://github.com/j-herman/rs750.git
 
 # Build
 cd ~/gz_ws
-colcon build 
+colcon build --symlink-install --merge-install --cmake-args \
+-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+-DBUILD_TESTING=ON \
+-DCMAKE_CXX_STANDARD=17
 
 # Build the ArduPilot plugin
 cd ~/gz_ws/ardupilot_gazebo
@@ -58,13 +69,15 @@ make
 # Source the workspace
 source install/setup.bash
 
-# Add resources to the path
+# From your root workspace directory, add resources to the path
 export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:\
 $(pwd)/src/rs750/rs750_gazebo/models:\
 $(pwd)/src/rs750/rs750_gazebo/worlds:\
-$(pwd)/src/asv_wave_sim/gz-waves-models/models
-$(pwd)/src/asv_wave_sim/gz-waves-models/world_models
-$(pwd)/src/asv_wave_sim/gz-waves-models/worlds
+$(pwd)/src/asv_wave_sim/gz-waves-models/models:\
+$(pwd)/src/asv_wave_sim/gz-waves-models/world_models:\
+$(pwd)/src/asv_wave_sim/gz-waves-models/worlds:\
+$(pwd)/src/ardupilot_gazebo/models:\
+$(pwd)/src/ardupilot_gazebo/worlds
 
 # Add libraries to the plugin path
 export GZ_SIM_SYSTEM_PLUGIN_PATH=$GZ_SIM_SYSTEM_PLUGIN_PATH:\
