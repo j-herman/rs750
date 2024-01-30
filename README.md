@@ -67,6 +67,7 @@ cmake ..
 make
 
 # Source the workspace
+cd ~/gz_ws
 source install/setup.bash
 
 # From your root workspace directory, add resources to the path
