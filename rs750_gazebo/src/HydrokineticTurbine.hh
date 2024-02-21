@@ -51,14 +51,25 @@ namespace systems
 
   /// This plugin requires the following SDF parameters:
   /// * Required parameters:
-  /// 
+  /// <link_name>
   ///
   /// * Optional parameters:
-  /// 
-  ///
+  /// <ges_params>
+  ///    <turbine_efficiency>
+  ///    <turbine_size>
+  /// <topic>
   /// Example:
-  // <plugin>
-  // </plugin>
+  //    <include>
+  //      <pose>50 50 0 0 0 1.57079632</pose>
+  //      <uri>model://rs750</uri>
+  //      <plugin
+  //        filename="libHydrokineticTurbine.so"
+  //        name="gz::sim::systems::HydrokineticTurbine">
+  //        <link_name>base_link</link_name>
+  //        <topic>/ges_connect_topic</topic>
+  //      </plugin>
+  //    </include>
+
   class HydrokineticTurbine
       : public System,
         public ISystemConfigure,
@@ -80,13 +91,6 @@ namespace systems
     public: void PreUpdate(
                 const gz::sim::UpdateInfo &_info,
                 gz::sim::EntityComponentManager &_ecm) override;
-
-/*     /// \brief Check if an entity is enabled or not.
-    /// \param[in] _entity Target entity
-    /// \param[in] _ecm Entity component manager
-    /// \return True if buoyancy should be applied.
-    public: bool IsEnabled(Entity _entity,
-        const EntityComponentManager &_ecm) const; */
 
     /// \brief Private data pointer
     private: std::unique_ptr<HydrokineticTurbinePrivate> dataPtr;

@@ -93,13 +93,18 @@ printenv | grep GZ
 #### Run Gazebo
 
 ```bash
-gz sim -v4 -r sailing_course.sdf
+gz sim -v4 -r sailing_course_ges.sdf
 ```
 
 #### Run ArduPilot SITL
 
 ```bash
 sim_vehicle.py -D -v Rover -f rover --model JSON --add-param-file=~/gz_ws/src/rs750/rs750_gazebo/config/rs750.param --console
+```
+#### Usage
+To pause charging from the command line:
+```
+gz topic -t "/ges_connect_topic" -m gz.msgs.Boolean -p "data: true"
 ```
 
 ## License
