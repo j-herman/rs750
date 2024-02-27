@@ -5,7 +5,7 @@
     <link name="link">
       <enable_wind>true</enable_wind>
       <inertial>
-        <mass>150.0</mass>
+        <mass>1500.0</mass>
         <inertia>
           <ixx>3625</ixx>
           <ixy>0.0</ixy>
@@ -39,10 +39,47 @@
         <pose>0 0 0 0 0 -1.5708</pose>
         <geometry>
           <mesh>
-            <uri>model://rs750/meshes/rs750_hull_collision_3.stl</uri>
+          <scale>1 1 1</scale>
+            <!-- <uri>model://rs750/meshes/rs750_hull_collision_3.stl</uri> -->
+            <uri>model://vessel_a_mod/meshes/vessel_collision.dae</uri>
           </mesh>
         </geometry>
       </collision>
     </link>
-  </model>
+ 
+          <!-- Hydrodynamics plugin -->
+        <plugin
+          filename="gz-waves1-hydrodynamics-system"
+          name="gz::sim::systems::Hydrodynamics">
+
+          <enable>vessel_a_mod::link::collision</enable>
+
+          <hydrodynamics>
+          <damping_on>1</damping_on>
+          <viscous_drag_on>1</viscous_drag_on>
+          <pressure_drag_on>1</pressure_drag_on>
+        
+          <!-- Linear and Angular Damping -->
+          <cDampL1>1.0E-6</cDampL1>
+          <cDampL2>1.0E-6</cDampL2>
+          <cDampR1>1.0E-6</cDampR1>
+          <cDampR2>1.0E-6</cDampR2>
+        
+          <!-- 'Pressure' Drag -->
+          <cPDrag1>1.0E+2</cPDrag1>
+          <cPDrag2>1.0E+2</cPDrag2>
+          <fPDrag>0.4</fPDrag>
+          <cSDrag1>1.0E+2</cSDrag1>
+          <cSDrag2>1.0E+2</cSDrag2>
+          <fSDrag>0.4</fSDrag>
+          <vRDrag>1.0</vRDrag>
+          </hydrodynamics>
+          <markers>
+            <update_rate>10</update_rate>
+            <water_patch>0</water_patch>
+            <waterline>0</waterline>
+            <underwater_surface>0</underwater_surface>
+          </markers>
+        </plugin>
+ </model>
 </sdf>
