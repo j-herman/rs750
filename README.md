@@ -90,6 +90,8 @@ printenv | grep GZ
 
 ## Usage
 
+### Method 1: Control RS750 with ArduPilot
+
 #### Run Gazebo
 
 ```bash
@@ -101,7 +103,17 @@ gz sim -v4 -r sailing_course_ges.sdf
 ```bash
 sim_vehicle.py -D -v Rover -f rover --model JSON --add-param-file=~/gz_ws/src/rs750/rs750_gazebo/config/rs750.param --console
 ```
-#### Usage
+
+### Method 2: Control RS750 with ROS2
+
+```bash
+ros2 launch rs750_ros rs750.launch.py
+```
+Sails will autotrim.  To steer, publish to the /cmd_vel topic.  Only the angular z component will affect the RS750's motion through the rudder joint position controller.
+Example:
+`ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -1.0}}"`
+
+### Usage notes
 To pause charging from the command line:
 ```
 gz topic -t "/ges_connect_topic" -m gz.msgs.Boolean -p "data: true"
