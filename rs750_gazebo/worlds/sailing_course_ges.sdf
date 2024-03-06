@@ -502,13 +502,7 @@
 
     <include>
       <pose>50 50 0 0 0 1.57079632</pose>
-      <uri>model://rs750</uri>
-      <plugin
-        filename="libHydrokineticTurbine.so"
-        name="gz::sim::systems::HydrokineticTurbine">
-        <link_name>base_link</link_name>
-        <topic>/ges_connect_topic</topic>
-      </plugin>
+      <uri>model://rs750_ges</uri>
     </include>
 
     <include>
