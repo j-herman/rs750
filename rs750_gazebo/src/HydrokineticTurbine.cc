@@ -112,6 +112,9 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   /// \brief Size parameter (placeholder) for turbine power generation - m^2
   public: double turbineSize = 0.045;
 
+  /// \brief Axis in which to measure turbine velocity/ water flow rate
+  public: std::string axis = "X";
+
   /// \brief Turbine axial induction factor, placeholder for future calculation or optimization
   public: double zeta = 0.781;
 
@@ -149,6 +152,14 @@ void HydrokineticTurbinePrivate::Load(const EntityComponentManager &_ecm,
            << "] in model" << std::endl;
     return;
   }
+
+  if (_sdf->HasElement("axis"))
+  {
+    this->axis = _sdf->Get<std::string>("axis");
+    gzmsg << "Turbine axis set to " << this->axis << std::endl;
+  }
+  else 
+    gzmsg << "Turbine axis not set!" << std::endl;
 
   if (!_sdf->HasElement("ges_params"))
   {
@@ -242,25 +253,49 @@ void HydrokineticTurbine::PreUpdate(
   // Velocity of the turbine in the world frame
   gz::math::Vector3d linkVel(this->dataPtr->link.WorldLinearVelocity(_ecm).value());
 
-  // Velocity of the turbine in the sailboat frame
+  // Velocity of the turbine in its own frame
   this->dataPtr->modelPose = gz::sim::worldPose(this->dataPtr->link.Entity(), _ecm);
-  gz::math::Vector3d linkVelBoatFrame =
+  gz::math::Vector3d linkVelTurbineFrame =
     this->dataPtr->modelPose.Rot().RotateVectorReverse(linkVel);
-  gz::math::Vector3d boatXVel(linkVelBoatFrame.X(), 0, 0);
+  double turbineFwdVel = 0;
+  if (this->dataPtr->axis == "X")
+  {
+    turbineFwdVel = linkVelTurbineFrame.X();
+    //gzmsg << "Turbine forward velocity X: " << turbineFwdVel << std::endl;
+  }
+  else if (this->dataPtr->axis == "Y")
+  {
+    turbineFwdVel = linkVelTurbineFrame.Y();
+    //gzmsg << "Turbine forward velocity Y: " << turbineFwdVel << std::endl;
+  }
+  else 
+  {
+    gzmsg << "Turbine forward velocity error" << std::endl;
+    return;
+  }
 
   // Helper math
-  double dPAt = boatXVel.Length()*boatXVel.Length()*this->dataPtr->unitTurbineDragForce;
-  double vBar = boatXVel.Length()*(1+this->dataPtr->zeta)/2;
+  double dPAt = turbineFwdVel*turbineFwdVel*this->dataPtr->unitTurbineDragForce;
+  double vBar = turbineFwdVel*(1+this->dataPtr->zeta)/2;
   // Calculate and publish turbine shaft power
   double pwr = this->dataPtr->turbineEfficiency*dPAt*vBar;
   pwrGenMsg.set_data(pwr);
   this->dataPtr->pwrGenPub.Publish(pwrGenMsg);
 
   // Calculate turbine drag in boat frame
-  gz::math::Vector3d drag(-dPAt,0,0);
+  double x, y = 0;
+  if (this->dataPtr->axis == "X")
+  {
+    x = -dPAt;
+  }
+  else if (this->dataPtr->axis == "Y")
+  {
+    y = -dPAt;
+  }
+  gz::math::Vector3d drag(x,y,0);
   // Apply the drag force at link
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
-  this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
+  //this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
 }
 
 GZ_ADD_PLUGIN(HydrokineticTurbine,
