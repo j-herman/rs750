@@ -546,7 +546,8 @@
           </axis>
         </joint>
         <link name="turbine_link">
-          <pose frame="">-1.4 0.1 -0.04 0.1 -0.4 1.5708</pose>
+          <!-- <pose frame="">-1.4 0.1 -0.04 0.1 -0.4 1.5708</pose> -->
+          <pose frame="">-0.18 0.095 -0.5 0 -1.5708 1.5708</pose>
           <inertial>
             <pose frame="">0 0 0 0 0 0</pose>
             <mass>1</mass>
@@ -562,7 +563,7 @@
           <visual name="visual_00">
             <geometry>
               <mesh>
-                <scale>1 1 1</scale>
+                <scale>2 2 2</scale>
                 <uri>model://rs750_ges/meshes/thruster.dae</uri>
               </mesh>
             </geometry>
@@ -606,8 +607,8 @@
           <cmd_min>-50</cmd_min>
         </plugin>
 
-        <plugin name="gz::sim::systems::SailPositionController"
-            filename="asv_sim2-sail-position-controller-system">
+        <plugin name="gz::sim::systems::SailPositionControllerGES"
+            filename="libSailPositionControllerGES.so">
           <joint_name>fore_sail_joint</joint_name>
           <topic>/fore_sail_joint/cmd_pos</topic>
           <p_gain>50</p_gain>
@@ -619,8 +620,8 @@
           <cmd_min>-200</cmd_min>
         </plugin>
 
-        <plugin name="gz::sim::systems::SailPositionController"
-            filename="asv_sim2-sail-position-controller-system">
+        <plugin name="gz::sim::systems::SailPositionControllerGES"
+            filename="libSailPositionControllerGES.so">
           <joint_name>main_sail_joint</joint_name>
           <topic>/main_sail_joint/cmd_pos</topic>
           <p_gain>50</p_gain>
@@ -732,6 +733,7 @@
         name="gz::sim::systems::HydrokineticTurbine">
         <link_name>turbine_link</link_name>
         <topic>/ges_connect_topic</topic>
+        <axis>Y</axis>
       </plugin>
 
     </model>
