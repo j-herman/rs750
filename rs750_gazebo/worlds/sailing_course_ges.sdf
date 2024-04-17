@@ -78,9 +78,9 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
-    <!-- Wind: 10 m/s from the south-west (ENU) -->
+    <!-- Wind: 20 m/s from the south-west (ENU) -->
     <wind>
-      <linear_velocity>7.07 7.07 0</linear_velocity>
+      <linear_velocity>14.1 14.1 0</linear_velocity>
     </wind>
 
     <include>

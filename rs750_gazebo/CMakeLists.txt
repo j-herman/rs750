@@ -65,8 +65,18 @@ target_link_libraries(HydrokineticTurbine PUBLIC
   gz-sim${GZ_SIM_VER}::core
   gz-math${GZ_MATH_VER}
 )
+
+# Sail Position Controller plugin
+add_library(SailPositionControllerGES SHARED
+  src/SailPositionControllerGES.cc
+)
+target_link_libraries(SailPositionControllerGES PUBLIC
+  gz-common${GZ_COMMON_VER}::gz-common${GZ_COMMON_VER}
+  gz-sim${GZ_SIM_VER}::core
+  gz-math${GZ_MATH_VER}
+)
 install(
-  TARGETS HydrokineticTurbine
+  TARGETS HydrokineticTurbine SailPositionControllerGES
   DESTINATION lib)
 
 if(BUILD_TESTING)
