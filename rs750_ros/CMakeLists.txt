@@ -15,6 +15,11 @@ install(PROGRAMS
 install(PROGRAMS 
   scripts/sail_control.py
   DESTINATION lib/${PROJECT_NAME})
-  
+install(PROGRAMS 
+  scripts/heading_control.py
+  DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS 
+  scripts/pose_generator.py
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

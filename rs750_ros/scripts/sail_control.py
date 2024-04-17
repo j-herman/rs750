@@ -32,6 +32,8 @@ class SailController(Node):
     def __init__(self):
         super().__init__('sail_controller')
 
+        self.autotrim = True
+
         # Parameters (TODO)
         self._sail_angle_attack_deg = 10.
         self._sail_angle_min_deg = 10.
@@ -94,8 +96,11 @@ class SailController(Node):
 
         msg.data = sail_angle
 
-        self.mainsail_pub.publish(msg)
-        self.foresail_pub.publish(msg)
+        if self.autotrim:
+            self.mainsail_pub.publish(msg)
+            self.foresail_pub.publish(msg)
+        else:
+            return
 
     def _deg(self, rad):
         return rad * 180. / math.pi

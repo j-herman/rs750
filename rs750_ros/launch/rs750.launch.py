@@ -31,7 +31,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    pkg_ros_gz_sim_demos = get_package_share_directory('ros_gz_sim_demos')
+    #pkg_ros_gz_sim_demos = get_package_share_directory('ros_gz_sim_demos')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
     pkg_rs750 = get_package_share_directory('rs750_gazebo')
 
@@ -91,8 +91,23 @@ def generate_launch_description():
        output='both'
     )
 
+    heading_control = Node(
+       package='rs750_ros',
+       executable='heading_control.py',
+       name= 'heading_control',
+       output='both'
+    )
+
+    pose = Node(
+       package='rs750_ros',
+       executable='pose_generator.py',
+       name= 'pose_generator',
+       output='both'
+    )
+
+
     return LaunchDescription([
-        bridge, rudder, sail, robot_state_publisher,
+        bridge, rudder, sail, robot_state_publisher, heading_control, pose,
             # Launch Arguments
             # DeclareLaunchArgument(
             #     'world',
