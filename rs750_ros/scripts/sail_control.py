@@ -25,14 +25,13 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Float64
+from rs750_ros.msg import Control,VesselPose
 
 
 class SailController(Node):
 
     def __init__(self):
         super().__init__('sail_controller')
-
-        self.autotrim = True
 
         # Parameters (TODO)
         self._sail_angle_attack_deg = 10.
@@ -50,13 +49,21 @@ class SailController(Node):
         self.wind_sub = self.create_subscription(Vector3, '/wind/apparent', self.wind_callback,
             10)
         self.wind_sub  # prevent unused variable warning
+        
+        self.autotrim_sub = self.create_subscription(Control, '/control', self.control_callback, 10)
+        self.autotrim_sub
+
+        self.autotrim = True
 
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
     def wind_callback(self, msg):
         self._app_wind_msg = msg
-        
+    
+    def control_callback(self, msg):
+         self.control_msg = msg
+         self.autotrim = self.control_msg.autotrim
 
     def update(self):
         if self._app_wind_msg == None:

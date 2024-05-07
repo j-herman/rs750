@@ -8,6 +8,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist, Vector3, Quaternion
 from std_msgs.msg import Float64
 from sensor_msgs.msg import Imu
+from rs750_ros.msg import Control, VesselPose
 
 class HeadingController(Node):
 
@@ -15,49 +16,51 @@ class HeadingController(Node):
         super().__init__('heading_controller')
 
         self.rudder_cmd = self.create_publisher(Float64, '/rudder_joint/cmd_pos', 10)
-        self.test_cmd = self.create_publisher(Float64, '/test', 10)
 
-        self.heading_sub = self.create_subscription(Float64, '/pose', self.heading_callback, 10)
-        self.heading_sub
+        self.pose_sub = self.create_subscription(VesselPose, '/pose', self.pose_callback, 10)
+        self.pose_sub
 
-        self.command_sub = self.create_subscription(Float64, '/cmd_vel', self.command_callback, 10)
-        self.command_sub
-        
+        self.control_cmd = self.create_publisher(Control, '/control', 10)
+
+        self.control_sub = self.create_subscription(Control, '/control', self.control_callback, 10)
+        self.control_sub
+
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
         # Controller Parameters
-        self.K_heading = 0.025 
-        
-    def heading_callback(self,msg):
-        self.hdg_msg = msg
+        self.K_heading = 0.025
 
-    def command_callback(self,msg):
-        self.des_heading = msg
+        # Instantiating Variables
+        self._app_wind_msg = None
+    
+    def pose_callback(self,msg):
+        self.pose_msg = msg
+
+    def control_callback(self,msg):
+        self.control = msg
 
     def update(self):
 
-        msg2 = Float64()
-        try: 
-            hdg = self.hdg_msg.data
-            goal = self.des_heading.data
-            
-            err = goal - hdg
-            rudder_input = self.K_heading * err
-            
-            msg2.data = rudder_input
-            
-            msgtest = Float64()
-            msgtest.data = goal
-
-            self.rudder_cmd.publish(msg2)
-            self.test_cmd.publish(msgtest)
-        
+        try:
+            hdg = self.pose_msg.heading
         except:
-            return
+            hdg = 0.0
 
+        try:
+            goal = self.control.heading
+        except:
+            goal = 0.0
+        
+        err = goal - hdg
+        
+        rudder_input = self.K_heading * err
 
+        msg = Float64()
 
+        msg.data = rudder_input
+
+        self.rudder_cmd.publish(msg)
 
 
 def main(args=None):
