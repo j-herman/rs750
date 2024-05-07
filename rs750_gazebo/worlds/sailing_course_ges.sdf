@@ -46,7 +46,10 @@
       name="gz::sim::systems::WindEffects">
       <force_approximation_scaling_factor>0.1</force_approximation_scaling_factor>
     </plugin>
-
+    <plugin
+      filename="gz-sim-magnetometer-system"
+      name="gz::sim::systems::Magnetometer">
+    </plugin>
     <plugin filename="asv_sim2-anemometer-system"
       name="gz::sim::systems::Anemometer">
     </plugin>
@@ -80,12 +83,12 @@
 
     <!-- Wind: 10 m/s from the south-west (ENU) -->
     <wind>
-      <linear_velocity>0 -10 0</linear_velocity>
+      <linear_velocity>14.1 14.1 0</linear_velocity>
     </wind>
 
     <include>
       <pose>0 0 0 0 0 0</pose>
-      <uri>model://waves</uri>
+      <uri>model://waves_ges</uri>
     </include>
 
     <model name="buoy_wp1">
@@ -523,6 +526,18 @@
         </waypoints>
       </plugin>
     </include>
-
+<!--       <plugin
+        filename="gz-sim-pose-publisher-system"
+        name="gz::sim::systems::PosePublisher">
+        <use_pose_vector_msg>false</use_pose_vector_msg>
+      </plugin> -->
+      <plugin
+        filename="gz-sim-odometry-publisher-system"
+        name="gz::sim::systems::OdometryPublisher">
+        <dimensions>3</dimensions>
+        <odom_publish_frequency>10.0</odom_publish_frequency>
+        <odom_frame>map</odom_frame>
+        <robot_base_frame>rs750/base_link</robot_base_frame>
+      </plugin>
   </world>
 </sdf>
