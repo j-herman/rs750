@@ -1,0 +1,3 @@
+float64 heading
+float64 app_wind
+float64 linear_v
