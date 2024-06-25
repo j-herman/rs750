@@ -88,8 +88,14 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   /// \brief Topic for publishing power generation rate
   public: std::string topicPwrGen = "/ges/wattage";
 
+  /// \brief Topic for publishing turbine drag
+  public: std::string topicTrbnDrag = "/ges/drag";
+
   /// \brief Transport node publisher for power generation
   public: transport::Node::Publisher pwrGenPub;
+
+  /// \brief Transport node publisher for turbine drag
+  public: transport::Node::Publisher trbnDragPub;
 
   /// \brief Update rate buffer for power publisher
   public: double updateRate = 10;
@@ -106,11 +112,13 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   /// \brief Linear force to apply at the turbine link, for scaling with velocity.  To be replaced, eventually, when calculating axial induction factor.
   public: double unitTurbineDragForce;
 
+  /// The following turbine parameters are sourced from Watt&Sea 600
+
   /// \brief Efficiency parameter for turbine power generation
-  public: double turbineEfficiency = 0.8;
+  public: double turbineEfficiency = 0.39;
 
   /// \brief Size parameter (placeholder) for turbine power generation - m^2
-  public: double turbineSize = 0.045;
+  public: double turbineSize = 0.0616;
 
   /// \brief Axis in which to measure turbine velocity/ water flow rate
   public: std::string axis = "X";
@@ -223,6 +231,9 @@ void HydrokineticTurbine::Configure(const Entity &_entity,
   this->dataPtr->pwrGenPub = this->dataPtr->node.Advertise<msgs::Float>(
       this->dataPtr->topicPwrGen, opts);
 
+  this->dataPtr->trbnDragPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicTrbnDrag, opts);
+
   this->dataPtr->unitTurbineDragForce = 0.5*(1-(this->dataPtr->zeta*this->dataPtr->zeta))*this->dataPtr->turbineSize*this->dataPtr->RHO_W;
 }
 
@@ -250,6 +261,7 @@ void HydrokineticTurbine::PreUpdate(
   }
 
   msgs::Float pwrGenMsg;
+  msgs::Float trbnDragMsg;
   // Velocity of the turbine in the world frame
   gz::math::Vector3d linkVel(this->dataPtr->link.WorldLinearVelocity(_ecm).value());
 
@@ -279,8 +291,6 @@ void HydrokineticTurbine::PreUpdate(
   double vBar = turbineFwdVel*(1+this->dataPtr->zeta)/2;
   // Calculate and publish turbine shaft power
   double pwr = this->dataPtr->turbineEfficiency*dPAt*vBar;
-  pwrGenMsg.set_data(pwr);
-  this->dataPtr->pwrGenPub.Publish(pwrGenMsg);
 
   // Calculate turbine drag in boat frame
   double x, y = 0;
@@ -293,9 +303,18 @@ void HydrokineticTurbine::PreUpdate(
     y = -dPAt;
   }
   gz::math::Vector3d drag(x,y,0);
+
+  //Publish to Power and Drag Topic
+  pwrGenMsg.set_data(pwr);
+  this->dataPtr->pwrGenPub.Publish(pwrGenMsg);
+
+  trbnDragMsg.set_data(x + y);
+  this->dataPtr->trbnDragPub.Publish(trbnDragMsg);
+
   // Apply the drag force at link
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
-  //this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
+  // gzmsg << "Turbine Drag: " << y << std::endl;
+  this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
 }
 
 GZ_ADD_PLUGIN(HydrokineticTurbine,

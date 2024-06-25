@@ -43,6 +43,7 @@ class SailController(Node):
         self._sail_angle_max = self._rad(self._sail_angle_max_deg)
 
         self._app_wind_msg = None
+        self.control_msg = None
 
         self.mainsail_pub = self.create_publisher(Float64, '/main_sail_joint/cmd_pos', 10)
         self.foresail_pub = self.create_publisher(Float64, '/fore_sail_joint/cmd_pos', 10)
@@ -62,10 +63,24 @@ class SailController(Node):
         self._app_wind_msg = msg
     
     def control_callback(self, msg):
-         self.control_msg = msg
-         self.autotrim = self.control_msg.autotrim
+        self.control_msg = msg
 
     def update(self):
+
+        # Control Message Handling
+
+        if self.control_msg == None:
+            self.get_logger().info('no control message', once=True)
+            return
+        Control = self.control_msg
+
+
+        self.autotrim = Control.autotrim
+        self._sail_angle_attack = self._rad(Control.angle_of_attack)
+
+
+        # Sail Angle Calculation and Command
+
         if self._app_wind_msg == None:
             self.get_logger().info('no wind message', once=True)
             return

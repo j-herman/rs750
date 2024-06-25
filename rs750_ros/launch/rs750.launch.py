@@ -58,7 +58,8 @@ def generate_launch_description():
             '/world/waves/model/rs750/link/base_link/sensor/anemometer/anemometer@geometry_msgs/msg/Vector3[gz.msgs.Vector3d',
             '/world/waves/model/rs750/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/world/waves/model/rs750/link/base_link/sensor/navsat_sensor/navsat@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
-            '/ges/wattage@std_msgs/msg/Float32[gz.msgs.Float'
+            '/ges/wattage@std_msgs/msg/Float32[gz.msgs.Float',
+            '/ges/drag@std_msgs/msg/Float32[gz.msgs.Float'
         ],
         remappings=[
             ('/world/waves/model/rs750/joint_state', '/joint_states'),

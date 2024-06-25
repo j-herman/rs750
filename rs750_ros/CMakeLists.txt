@@ -29,5 +29,8 @@ install(PROGRAMS
 install(PROGRAMS 
   scripts/pose_generator.py
   DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS 
+  scripts/data_recorder.py
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

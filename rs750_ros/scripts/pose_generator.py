@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Vector3, Quaternion
 from std_msgs.msg import Float64
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, MagneticField, NavSatFix
 from rs750_ros.msg import VesselPose
 
 class PoseGenerator(Node):
@@ -17,37 +17,54 @@ class PoseGenerator(Node):
         
         self.pose_pub = self.create_publisher(VesselPose, '/pose', 10)
 
-        self.heading_sub = self.create_subscription(Imu, '/rs750/IMU', self.heading_callback, 10)
+        self.time_pub = self.create_publisher(Float64, '/sim_time', 10)
+
+        self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
         self.heading_sub
 
         self.wind_sub = self.create_subscription(Vector3, '/wind/apparent', self.wind_callback,
             10)
         self.wind_sub  # prevent unused variable warning
 
+        self.navsat_sub = self.create_subscription(NavSatFix, '/rs750/navsat', self.navsat_callback,
+            10)
+        self.navsat_sub  # prevent unused variable warning
+
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
         self.quat = None
         self._app_wind_msg = None
+        self.mag_field = None
+        self.navsat_msg = None
+        self.sim_time = None
+        self.lat_array = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.long_array = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.dt = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def heading_callback(self, msg):
-        self.quat = msg.orientation
+        self.mag_field = msg.magnetic_field
 
     def wind_callback(self, msg):
         self._app_wind_msg = msg
 
+    def navsat_callback(self, msg):
+        self.navsat_msg = msg
+        self.sim_time = self.navsat_msg.header.stamp.sec + self.navsat_msg.header.stamp.nanosec / 1000000000
+        msg_time = Float64()
+        msg_time.data = self.sim_time
+        self.time_pub.publish(msg_time)
+
     def update(self):
 
         # Heading Section
-        if self.quat == None:
-            self.get_logger().info('no pose message', once=True)
+        if self.mag_field == None:
+            self.get_logger().info('no mag field message', once=True)
             return
         
-        q = self.quat
-        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+        magnetic_field = self.mag_field
         
-        yaw = np.arctan2(siny_cosp, cosy_cosp) * 180 / np.pi
+        yaw = (math.atan2(magnetic_field.y,magnetic_field.x)*180/math.pi + 90) % 360
         
         msg1 = VesselPose()
         msg1.heading = yaw 
@@ -69,10 +86,35 @@ class PoseGenerator(Node):
             # Measure wind angle between (-1 * wind_vel) and positive x-axis
             wind_angle = math.atan2(-wind_vel.y, -wind_vel.x)
 
-        msg1.app_wind = wind_angle *math.pi / 180
+        msg1.app_wind = wind_angle * 180 / math.pi
 
 
         # Linear Velocity Section
+        if self.navsat_msg == None:
+            self.get_logger().info('no navsat message', once=True)
+            return
+        
+        self.lat_array.append(self.navsat_msg.latitude)
+        self.lat_array.pop(0)
+        self.long_array.append(self.navsat_msg.longitude)
+        self.long_array.pop(0)
+        self.dt.append(self.sim_time)
+        self.dt.pop(0)
+
+        lat1 = self.lat_array[0]
+        lat2 = self.lat_array[9]
+        lon1 = self.long_array[0]
+        lon2 = self.long_array[9]
+        deltat = self.dt[9] - self.dt[0]
+        
+        R = 6378.137
+        dLat = lat2 * math.pi / 180 - lat1 * math.pi / 180
+        dLon = lon2 * math.pi / 180 - lon1 * math.pi / 180
+        a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(dLon/2) * math.sin(dLon/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = R * c * 1000 # meters
+
+        msg1.linear_v = d / deltat
 
         self.pose_pub.publish(msg1)
 

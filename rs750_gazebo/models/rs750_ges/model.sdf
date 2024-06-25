@@ -322,19 +322,19 @@
             <x>
               <noise type="gaussian">
                 <mean>0.0</mean>
-                <stddev>0.1</stddev>
+                <stddev>0.0</stddev>
               </noise>
             </x>
             <y>
               <noise type="gaussian">
                 <mean>0.0</mean>
-                <stddev>0.1</stddev>
+                <stddev>0.0</stddev>
               </noise>
             </y>
             <z>
               <noise type="gaussian">
                 <mean>0.0</mean>
-                <stddev>0.1</stddev>
+                <stddev>0.0</stddev>
               </noise>
             </z>
           </magnetometer>
@@ -574,10 +574,11 @@
         </joint>
         <link name="turbine_link">
           <!-- <pose frame="">-1.4 0.1 -0.04 0.1 -0.4 1.5708</pose> -->
-          <pose frame="">-0.18 0.095 -0.5 3.14 1.5708 1.5708</pose>
+          <pose frame="">-0.3 0.0 -0.5 3.14 1.5708 1.5708</pose>
           <inertial>
             <pose frame="">0 0 0 0 0 0</pose>
-            <mass>1</mass>
+            <!--mass from Watt&Sea 600 Specs-->
+            <mass>7.4</mass> 
             <inertia>
               <ixx>0.01</ixx>
               <ixy>0</ixy>
@@ -754,7 +755,6 @@
             <underwater_surface>0</underwater_surface>
           </markers>
         </plugin>
-
       <plugin
         filename="libHydrokineticTurbine.so"
         name="gz::sim::systems::HydrokineticTurbine">
@@ -763,4 +763,5 @@
         <axis>Y</axis>
       </plugin>
     </model>
+
 </sdf>
