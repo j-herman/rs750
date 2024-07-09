@@ -38,9 +38,9 @@ class PoseGenerator(Node):
         self.mag_field = None
         self.navsat_msg = None
         self.sim_time = None
-        self.lat_array = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.long_array = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.dt = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lat_array = [0, 0, 0, 0, 0]
+        self.long_array = [0, 0, 0, 0, 0]
+        self.dt = [0, 0, 0, 0, 0]
 
     def heading_callback(self, msg):
         self.mag_field = msg.magnetic_field
@@ -61,10 +61,17 @@ class PoseGenerator(Node):
         if self.mag_field == None:
             self.get_logger().info('no mag field message', once=True)
             return
-        
         magnetic_field = self.mag_field
         
-        yaw = (math.atan2(magnetic_field.y,magnetic_field.x)*180/math.pi + 90) % 360
+        try:
+            p = (math.atan2(magnetic_field.y,magnetic_field.x) + math.pi/2)*180/math.pi
+            if p > 180:
+                q = p-360
+            else:
+                q = p
+            yaw = q
+        except:
+            yaw = 0.
         
         msg1 = VesselPose()
         msg1.heading = yaw 
@@ -102,10 +109,10 @@ class PoseGenerator(Node):
         self.dt.pop(0)
 
         lat1 = self.lat_array[0]
-        lat2 = self.lat_array[9]
+        lat2 = self.lat_array[4]
         lon1 = self.long_array[0]
-        lon2 = self.long_array[9]
-        deltat = self.dt[9] - self.dt[0]
+        lon2 = self.long_array[4]
+        deltat = self.dt[4] - self.dt[0]
         
         R = 6378.137
         dLat = lat2 * math.pi / 180 - lat1 * math.pi / 180

@@ -6,24 +6,10 @@ import numpy as np
 
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, Vector3, Quaternion
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, String
 from sensor_msgs.msg import Imu
 from rs750_ros.msg import Control, VesselPose
 
-def irons_check(goal):
-    goal = np.unwrap(goal)
-    if -60 <= goal <= 60:
-        if goal < 0:
-            new_goal = -60
-        else:
-            new_goal = 60
-    else:
-        new_goal = np.goal
-    return new_goal
-
-def tack_check(goal,hdg):
-    tack = goal*hdg < 0
-    return tack
 
 class HeadingController(Node):
 
@@ -40,53 +26,113 @@ class HeadingController(Node):
         self.control_sub = self.create_subscription(Control, '/control', self.control_callback, 10)
         self.control_sub
 
-        timer_period = 0.1  # 10 Hz
-        self.timer = self.create_timer(timer_period, self.update)
+        self.mainsail_pub = self.create_publisher(Float64, '/main_sail_joint/cmd_pos', 10)
+        self.foresail_pub = self.create_publisher(Float64, '/fore_sail_joint/cmd_pos', 10)
+
+        self.timer_period = 0.1  # 10 Hz
+        self.timer = self.create_timer(self.timer_period, self.update)
+
+        self.test_cmd = self.create_publisher(Float64, '/test', 10)
 
         # Controller Parameters
-        self.K_heading = 0.025
-    
+        self.K_heading = 0.0025
+
     def pose_callback(self,msg):
         self.pose_msg = msg
 
     def control_callback(self,msg):
         self.control = msg
 
+    def _deg(self, rad):
+        return rad * 180. / math.pi
+
+    def _rad(self, deg):
+        return deg * math.pi / 180.
+    
+    def deltar(self,hdg,goal):
+        rmax = math.pi/4
+        err = self._rad(hdg - goal)
+
+        if math.cos(err) >= 0:
+            return -1*rmax*math.sin(err)
+        else:
+            return -1*rmax*np.sign(math.sin(err))
+
+    def findQuad(self,angle):
+        if angle > 0 and angle < 90:
+            return 1
+        if angle >= 90 and angle <= 180:
+            return 2
+        if angle >= -180 and angle <= -90:
+            return 3
+        else:
+            return 4
+        
+    def findMode(self,goal,hdg):
+        goalQuad = self.findQuad(goal)
+        hdgQuad = self.findQuad(hdg)
+
+        if goalQuad == hdgQuad or goalQuad + hdgQuad == 3 or goalQuad + hdgQuad == 7:
+            mode = "trim"
+        if goalQuad == 1 and hdgQuad == 4:
+            mode = "tack"
+        if goalQuad == 4 and hdgQuad == 1:
+            mode = "tack"
+        else:
+            mode = "trim"
+        self.mode = mode
+
     def update(self):
 
         try:
             hdg = self.pose_msg.heading
         except:
-            hdg = 90.0
+            hdg = 70.0
 
         try:
             goal = self.control.heading
         except:
-            goal = 90.0
+            goal = 70.0
 
         try:
             aoa = self.control.angle_of_attack
         except:
             aoa = 10.0
 
-        # Irons Check
-        # goal = irons_check(goal)
-
-        err = goal - hdg
-        
-        rudder_input = self.K_heading * err
-
-        msg = Float64()
-        msg.data = rudder_input
-        self.rudder_cmd.publish(msg)
-
+        testmsg = Float64()
         msg2 = Control()
+        msg = Float64()
+        msg_sail = Float64()
 
-        msg2.autotrim = True#self.tack_check(goal,hdg)
+        self.findMode(goal,hdg)
 
-        msg2.angle_of_attack = aoa
-        msg2.heading = goal
+        match self.mode:
+            case "trim":
+                rudder_input = self.deltar(hdg,goal)
+                msg.data = rudder_input
 
+                msg2.autotrim = True
+                msg2.angle_of_attack = aoa
+                msg2.heading = goal
+                self.get_logger().info("Trimming...")
+
+            case "tack":
+                tackgoal = hdg + np.sign(goal)*40
+                msg2.autotrim = False
+                
+                rudder_input = self.deltar(hdg,tackgoal)
+
+                
+                msg2.angle_of_attack = aoa
+                msg2.heading = goal
+
+                msg.data = rudder_input
+                testmsg.data = tackgoal
+
+                self.get_logger().info("Tacking...")
+            
+        self.test_cmd.publish(testmsg)
+        self.rudder_cmd.publish(msg)
         self.control_cmd.publish(msg2)
 
 

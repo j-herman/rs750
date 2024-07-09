@@ -32,5 +32,8 @@ install(PROGRAMS
 install(PROGRAMS 
   scripts/data_recorder.py
   DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS 
+  scripts/cmdline2topic.py
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

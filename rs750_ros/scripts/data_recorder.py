@@ -26,6 +26,9 @@ class DataRecorder(Node):
             10)
         self.navsat_sub  # prevent unused variable warning
 
+        self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
+        self.heading_sub
+
         self.power_sub = self.create_subscription(Float32, '/ges/wattage', self.power_callback,
             10)
         self.power_sub  # prevent unused variable warning
@@ -39,14 +42,15 @@ class DataRecorder(Node):
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
-        test_time = 20  # 1 min runs
+        test_time = 30  # Time of run in sec
         self.test_timer = self.create_timer(test_time, self.update_course)
 
         self.pose_msg = None
         self.navsat_msg = None
         self.power_msg = None
 
-        self.test_routine = [50., 60., 70., 80., 90., 100., 110., 120., 125., 130., 140., 150., 160.]
+        self.test_routine = [50., 60., 70., 90., 110., 130., 150., 170., -170., -150., -130., -110., -90., -70., -50.]
+        # [50., 60., 70., 80., 90., 100., 110., 120., 125., 130., 140., 150., 160.]
         # Test: Angle of Attack Sweep
         # [0.,5.,10.,15.,20.,25.,30.,35.,40.,45.]
         # Test: Heading Sweep
@@ -60,7 +64,7 @@ class DataRecorder(Node):
 
         self.csv_file = open(self.csv_file_path, mode='w')
         self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Test Value'])  # Write header to CSV file
+        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Drag','Test Value','mx','my','mz'])  # Write header to CSV file
 
     def __del__(self):
         self.csv_file.close()
@@ -77,36 +81,71 @@ class DataRecorder(Node):
     def drag_callback(self, msg):
         self.drag_msg = msg
 
+    def heading_callback(self, msg):
+        self.mag_field = msg.magnetic_field
+
     def update(self):
         try:
             data0 = self.navsat_msg.header.stamp.sec + self.navsat_msg.header.stamp.nanosec / 1000000000
-            data1 = self.pose_msg.heading
-            data2 = self.pose_msg.app_wind
-            data3 = self.pose_msg.linear_v
-            data4 = self.navsat_msg.latitude
-            data5 = self.navsat_msg.longitude
-            data6 = self.power_msg.data
-            data7 = self.drag_msg.data
-            data8 = self.test_routine[0]
-            
         except:
-            return
-        
-        # try:
-        #     data0 = self.navsat_msg.header.stamp.sec + self.navsat_msg.header.stamp.nanosec / 1000000000
-        #     data1 = self.pose_msg.heading
-        #     data2 = self.pose_msg.app_wind
-        #     data3 = self.pose_msg.linear_v
-        #     data4 = self.navsat_msg.latitude
-        #     data5 = self.navsat_msg.longitude
-        #     data6 = 0.
-        #     data7 = 0.
-        #     data8 = self.test_routine[0]
+            data0 = 0.
+
+        try:
+            data1 = self.pose_msg.heading
+        except:
+            data1 = 0.
             
-        # except:
-        #     return
+        try:
+            data2 = self.pose_msg.app_wind
+        except:
+            data2 = 0.
         
-        self.csv_writer.writerow([data0, data1, data2, data3, data4, data5, data6, data7, data8])
+        try:
+            data3 = self.pose_msg.linear_v
+        except:
+            data3 = 0.
+        
+        try:
+            data4 = self.navsat_msg.latitude
+        except:
+            data4=0.
+
+        try:
+            data5 = self.navsat_msg.longitude
+        except:
+            data5 = 0.
+        
+        try:
+            data6 = self.power_msg.data
+        except:
+            data6 = 0.
+        
+        try:
+            data7 = self.drag_msg.data
+        except:
+            data7 = 0.
+        
+        try:
+            data8 = self.test_routine[0]
+        except:
+            data8= 0.
+
+        try:
+            data9 = self.mag_field.x
+        except:
+            data9= 0.
+
+        try:
+            data10 = self.mag_field.y
+        except:
+            data10= 0.
+
+        try:
+            data11 = self.mag_field.z
+        except:
+            data11= 0.
+
+        self.csv_writer.writerow([data0, data1, data2, data3, data4, data5, data6, data7, data8, data9, data10, data11])
 
     def update_course(self):
 

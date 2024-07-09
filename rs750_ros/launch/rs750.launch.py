@@ -108,7 +108,6 @@ def generate_launch_description():
        output='both'
     )
 
-
     return LaunchDescription([
         bridge, rudder, sail, robot_state_publisher, heading_control, pose,
             # Launch Arguments
