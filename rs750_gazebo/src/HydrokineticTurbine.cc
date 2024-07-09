@@ -76,14 +76,21 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   /// normal operations.
   public: void OnConnect(const msgs::Boolean &_paused);
 
-  /// \brief A mutex to protect the pause/ unpause 
+  /// \brief Callback to update axial induction factor.
+  /// \param[in] _zeta Set to desired new value.
+  public: void OnZeta(const msgs::Float &_zeta);
+
+  /// \brief A mutex to protect variable updates
   public: std::mutex mutex;
 
   /// \brief Gazebo transport node
   public: transport::Node node;
 
   /// \brief Topic for stopping and restarting charging
-  public: std::string charge_topic;
+  public: std::string charge_topic = "/ges/charge";
+
+  /// \brief Topic for adjusting axial induction factor
+  public: std::string zeta_topic = "/ges/zeta";
 
   /// \brief Topic for publishing power generation rate
   public: std::string topicPwrGen = "/ges/wattage";
@@ -191,6 +198,16 @@ void HydrokineticTurbinePrivate::Load(const EntityComponentManager &_ecm,
       << this->model.Name(_ecm) << " subscribed to charge status messages on " 
       << this->charge_topic << std::endl;
 
+  if (_sdf->HasElement("zeta_topic"))
+    this->zeta_topic = _sdf->Get<std::string>("zeta_topic");
+
+  this->zeta_topic = transport::TopicUtils::AsValidTopic(this->zeta_topic);
+
+  this->node.Subscribe(zeta_topic, &HydrokineticTurbinePrivate::OnZeta, this);
+
+  gzmsg << "HydrokineticTurbine "
+      << this->model.Name(_ecm) << " subscribed to axial induction factor change messages on " 
+      << this->zeta_topic << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -199,6 +216,14 @@ void HydrokineticTurbinePrivate::OnConnect(const msgs::Boolean &_charge)
   std::lock_guard<std::mutex> lock(this->mutex);
   this->pause_charge = _charge.data();
   this->watts = 0;
+}
+
+/////////////////////////////////////////////////
+void HydrokineticTurbinePrivate::OnZeta(const msgs::Float &_zeta)
+{
+  std::lock_guard<std::mutex> lock(this->mutex);
+  this->zeta = _zeta.data();
+  this->unitTurbineDragForce = 0.5*(1-(this->zeta*this->zeta))*this->turbineSize*this->RHO_W;
 }
 
 //////////////////////////////////////////////////
@@ -295,7 +320,8 @@ void HydrokineticTurbine::PreUpdate(
   gz::math::Vector3d drag(x,y,0);
   // Apply the drag force at link
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
-  //this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
+  this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
+  //gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
 }
 
 GZ_ADD_PLUGIN(HydrokineticTurbine,
