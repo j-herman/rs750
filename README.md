@@ -118,6 +118,10 @@ To pause charging from the command line:
 ```
 gz topic -t "/ges_connect_topic" -m gz.msgs.Boolean -p "data: true"
 ```
+To manually adjust the axial induction factor from the command line:
+```
+gz topic -t "/ges/zeta" -m gz.msgs.Float -p "data: 0.6"
+```
 
 ## License
 
