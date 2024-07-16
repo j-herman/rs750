@@ -18,6 +18,8 @@ This repository is a fork of Rhys Mainwaring's original Racing Sparrow 750 simul
 
 ## Dependencies
 
+### For the original project:
+
 You will need a working installation of
 [Gazebo Garden](https://gazebosim.org/docs/garden/install) in order to use
 this package. There is no dependency on ROS. The original version of this
@@ -32,6 +34,9 @@ and is controlled using ArduPilot which requires the
 [`ardupilot_gazebo`](https://github.com/ArduPilot/ardupilot_gazebo) plugin.
 
 You will need a working installation of [ArduPilot](https://ardupilot.org/dev/docs/building-setup-linux.html) on your system to control the sailboat.
+
+### For the GES version:
+In addition to the dependencies listed above, you will need [ROS Humble](https://docs.ros.org/en/humble/Installation.html) installed.  ArduPilot is not required.
 
 ## Installation
 
@@ -48,6 +53,7 @@ sudo apt install libgz-sim7-dev rapidjson-dev libcgal-dev libfftw3-dev
 cd ~/gz_ws/src
 git clone https://github.com/srmainwaring/asv_sim.git
 git clone https://github.com/srmainwaring/asv_wave_sim.git
+# If using Ardupilot:
 git clone https://github.com/ArduPilot/ardupilot_gazebo.git
 
 # Clone this repo
@@ -60,7 +66,7 @@ colcon build --symlink-install --merge-install --cmake-args \
 -DBUILD_TESTING=ON \
 -DCMAKE_CXX_STANDARD=17
 
-# Build the ArduPilot plugin
+# Build the ArduPilot plugin (if using)
 cd ~/gz_ws/ardupilot_gazebo
 mkdir build && cd build
 cmake ..
