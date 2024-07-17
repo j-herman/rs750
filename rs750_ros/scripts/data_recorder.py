@@ -29,6 +29,9 @@ class DataRecorder(Node):
         self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
         self.heading_sub
 
+        self.mainsail_sub = self.create_subscription(Float64, '/main_sail_joint/cmd_pos', self.mainsail_callback, 10)
+        self.mainsail_sub
+
         self.power_sub = self.create_subscription(Float32, '/ges/wattage', self.power_callback,
             10)
         self.power_sub  # prevent unused variable warning
@@ -42,8 +45,8 @@ class DataRecorder(Node):
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
-        test_time = 30  # Time of run in sec
-        self.test_timer = self.create_timer(test_time, self.update_course)
+        # test_time = 30  # Time of run in sec
+        # self.test_timer = self.create_timer(test_time, self.update_course)
 
         self.pose_msg = None
         self.navsat_msg = None
@@ -64,7 +67,7 @@ class DataRecorder(Node):
 
         self.csv_file = open(self.csv_file_path, mode='w')
         self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Drag','Test Value','mx','my','mz'])  # Write header to CSV file
+        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Drag','Test Value','mx','my','SailAngle'])  # Write header to CSV file
 
     def __del__(self):
         self.csv_file.close()
@@ -83,6 +86,9 @@ class DataRecorder(Node):
 
     def heading_callback(self, msg):
         self.mag_field = msg.magnetic_field
+
+    def mainsail_callback(self, msg):
+        self.sailtrim = msg
 
     def update(self):
         try:
@@ -141,7 +147,7 @@ class DataRecorder(Node):
             data10= 0.
 
         try:
-            data11 = self.mag_field.z
+            data11 = self.sailtrim.data
         except:
             data11= 0.
 

@@ -53,13 +53,17 @@ def generate_launch_description():
         arguments=['/rudder_joint/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
             '/fore_sail_joint/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
             '/main_sail_joint/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',
+            '/ges/zeta@std_msgs/msg/Float32]gz.msgs.Float',
             '/magnetometer@sensor_msgs/msg/MagneticField[gz.msgs.Magnetometer',
             '/world/waves/model/rs750/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/world/waves/model/rs750/link/base_link/sensor/anemometer/anemometer@geometry_msgs/msg/Vector3[gz.msgs.Vector3d',
             '/world/waves/model/rs750/link/base_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/world/waves/model/rs750/link/base_link/sensor/navsat_sensor/navsat@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
             '/ges/wattage@std_msgs/msg/Float32[gz.msgs.Float',
-            '/ges/drag@std_msgs/msg/Float32[gz.msgs.Float'
+            '/ges/drag@std_msgs/msg/Float32[gz.msgs.Float',
+            '/ges/xdot@std_msgs/msg/Float32[gz.msgs.Float',
+            '/ges/ydot@std_msgs/msg/Float32[gz.msgs.Float'
+
         ],
         remappings=[
             ('/world/waves/model/rs750/joint_state', '/joint_states'),
@@ -108,8 +112,15 @@ def generate_launch_description():
        output='both'
     )
 
+    battery = Node(
+       package='rs750_ros',
+       executable='ges_battery.py',
+       name= 'ges_battery',
+       output='both'
+    )
+
     return LaunchDescription([
-        bridge, rudder, sail, robot_state_publisher, heading_control, pose,
+        bridge, rudder, sail, robot_state_publisher, heading_control, pose, battery,
             # Launch Arguments
             # DeclareLaunchArgument(
             #     'world',

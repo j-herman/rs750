@@ -114,7 +114,6 @@ class HeadingController(Node):
                 msg2.autotrim = True
                 msg2.angle_of_attack = aoa
                 msg2.heading = goal
-                self.get_logger().info("Trimming...")
 
             case "tack":
                 tackgoal = hdg + np.sign(goal)*40
@@ -128,8 +127,6 @@ class HeadingController(Node):
 
                 msg.data = rudder_input
                 testmsg.data = tackgoal
-
-                self.get_logger().info("Tacking...")
             
         self.test_cmd.publish(testmsg)
         self.rudder_cmd.publish(msg)

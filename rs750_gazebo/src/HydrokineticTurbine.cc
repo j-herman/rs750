@@ -98,6 +98,18 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   /// \brief Topic for publishing turbine drag
   public: std::string topicTrbnDrag = "/ges/drag";
 
+  /// \brief Topic for publishing xvel
+  public: std::string topicXvel = "/ges/xdot";
+
+  /// \brief Topic for publishing yvel
+  public: std::string topicYvel = "/ges/ydot";
+
+  /// \brief Transport node publisher for x vel
+  public: transport::Node::Publisher velXPub;
+
+  /// \brief Transport node publisher for y vel
+  public: transport::Node::Publisher velYPub;
+
   /// \brief Transport node publisher for power generation
   public: transport::Node::Publisher pwrGenPub;
 
@@ -259,6 +271,12 @@ void HydrokineticTurbine::Configure(const Entity &_entity,
   this->dataPtr->trbnDragPub = this->dataPtr->node.Advertise<msgs::Float>(
       this->dataPtr->topicTrbnDrag, opts);
 
+  this->dataPtr->velXPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicXvel, opts);
+
+  this->dataPtr->velYPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicYvel, opts);
+
   this->dataPtr->unitTurbineDragForce = 0.5*(1-(this->dataPtr->zeta*this->dataPtr->zeta))*this->dataPtr->turbineSize*this->dataPtr->RHO_W;
 }
 
@@ -287,6 +305,8 @@ void HydrokineticTurbine::PreUpdate(
 
   msgs::Float pwrGenMsg;
   msgs::Float trbnDragMsg;
+  msgs::Float velXMsg;
+  msgs::Float velYMsg;
   // Velocity of the turbine in the world frame
   gz::math::Vector3d linkVel(this->dataPtr->link.WorldLinearVelocity(_ecm).value());
 
@@ -295,6 +315,8 @@ void HydrokineticTurbine::PreUpdate(
   gz::math::Vector3d linkVelTurbineFrame =
     this->dataPtr->modelPose.Rot().RotateVectorReverse(linkVel);
   double turbineFwdVel = 0;
+  double XVel = linkVelTurbineFrame.X();
+  double YVel = linkVelTurbineFrame.Y();
   if (this->dataPtr->axis == "X")
   {
     turbineFwdVel = linkVelTurbineFrame.X();
@@ -336,10 +358,16 @@ void HydrokineticTurbine::PreUpdate(
   trbnDragMsg.set_data(x + y);
   this->dataPtr->trbnDragPub.Publish(trbnDragMsg);
 
+  velXMsg.set_data(XVel);
+  this->dataPtr->velXPub.Publish(velXMsg);
+
+  velYMsg.set_data(YVel);
+  this->dataPtr->velYPub.Publish(velYMsg);
+
   // Apply the drag force at link
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
   this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
-  //gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
+  // gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
 }
 
 GZ_ADD_PLUGIN(HydrokineticTurbine,

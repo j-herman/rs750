@@ -6,11 +6,13 @@ import sys
 import rclpy
 from rclpy.node import Node
 from rs750_ros.msg import Control
+from std_msgs.msg import Float32
 
 class CmdPublisher(Node):
     def __init__(self):
         super().__init__('cmd_publisher')
         self.publisher_ = self.create_publisher(Control, '/control', 10)
+        # self.publisher_ = self.create_publisher(Float32, '/ges/zeta', 10)
         self.get_logger().info('Publisher node has started. Waiting for input...')
         self.publish_input_value()
 
@@ -22,12 +24,14 @@ class CmdPublisher(Node):
                 break
             try:
                 value = float(user_input)
+                # msg = Float32()
                 msg = Control()
                 msg.autotrim = True
                 msg.heading = value
                 msg.angle_of_attack = 10.
+                # msg.data = value
                 self.publisher_.publish(msg)
-                self.get_logger().info(f'Published: {msg.heading}')
+                # self.get_logger().info(f'Published: {msg.data}')
             except ValueError:
                 self.get_logger().error("The input value must be a float.")
 

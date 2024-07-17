@@ -121,7 +121,10 @@ class PoseGenerator(Node):
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         d = R * c * 1000 # meters
 
-        msg1.linear_v = d / deltat
+        if deltat == 0:
+            msg.linear_v = 0
+        else:
+            msg1.linear_v = d / deltat
 
         self.pose_pub.publish(msg1)
 
