@@ -33,6 +33,7 @@
 
 #include <gz/msgs/boolean.pb.h>
 #include <gz/msgs/float.pb.h>
+#include <gz/msgs/stringmsg.pb.h>
 
 #include <mutex>
 #include <string>
@@ -158,6 +159,11 @@ class gz::sim::systems::HydrokineticTurbinePrivate
   public: bool pause_charge = false;
 
   public: const double RHO_W = 1025; // density of saltwater, g/L
+
+  /// \brief Debug options
+  public: bool debug{true}; // publish gazebo internal values, which can be set below in the debug section
+  public: transport::Node::Publisher debugPubS;
+  public: transport::Node::Publisher debugPubF;
 };
 
 //////////////////////////////////////////////////
@@ -267,15 +273,13 @@ void HydrokineticTurbine::Configure(const Entity &_entity,
 
   this->dataPtr->pwrGenPub = this->dataPtr->node.Advertise<msgs::Float>(
       this->dataPtr->topicPwrGen, opts);
-
-  this->dataPtr->trbnDragPub = this->dataPtr->node.Advertise<msgs::Float>(
-      this->dataPtr->topicTrbnDrag, opts);
-
-  this->dataPtr->velXPub = this->dataPtr->node.Advertise<msgs::Float>(
-      this->dataPtr->topicXvel, opts);
-
-  this->dataPtr->velYPub = this->dataPtr->node.Advertise<msgs::Float>(
-      this->dataPtr->topicYvel, opts);
+  if (this->dataPtr->debug)
+  {
+    this->dataPtr->debugPubS = this->dataPtr->node.Advertise<msgs::StringMsg>(
+      "/ges/debugS", opts);
+      this->dataPtr->debugPubF = this->dataPtr->node.Advertise<msgs::Float>(
+      "/ges/debugF", opts);
+  }
 
   this->dataPtr->unitTurbineDragForce = 0.5*(1-(this->dataPtr->zeta*this->dataPtr->zeta))*this->dataPtr->turbineSize*this->dataPtr->RHO_W;
 }
@@ -300,6 +304,7 @@ void HydrokineticTurbine::PreUpdate(
     enableComponent<components::LinearVelocity>(_ecm, this->dataPtr->link.Entity(), true);
     enableComponent<components::WorldPose>(_ecm, this->dataPtr->link.Entity());
     this->dataPtr->link.EnableVelocityChecks(_ecm, true);
+    enableComponent<components::WorldPose>(_ecm, this->dataPtr->model.Entity());
     this->dataPtr->initialized = true;
   }
 
@@ -367,7 +372,23 @@ void HydrokineticTurbine::PreUpdate(
   // Apply the drag force at link
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
   this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
-  // gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
+  //gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
+
+
+  // Set up two publishers to monitor values for debugging, in String or Float format.
+  // Modify as needed to export the desired variables or information.
+  // Default: heading in Gazebo global coordinates.
+  if (this->dataPtr->debug)
+  {
+    msgs::StringMsg debugMsgS;
+    auto boatPose = gz::sim::worldPose(this->dataPtr->model.Entity(), _ecm);
+
+    debugMsgS.set_data("Heading: " + std::to_string(boatPose.Yaw()));
+    this->dataPtr->debugPubS.Publish(debugMsgS);
+    msgs::Float debugMsgF;
+    debugMsgF.set_data(boatPose.Yaw());
+    this->dataPtr->debugPubF.Publish(debugMsgF);
+  }
 }
 
 GZ_ADD_PLUGIN(HydrokineticTurbine,
