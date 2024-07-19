@@ -6,7 +6,7 @@ import rclpy
 
 from rclpy.node import Node
 from geometry_msgs.msg import Vector3, Quaternion
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float32
 from sensor_msgs.msg import Imu, MagneticField, NavSatFix
 from rs750_ros.msg import VesselPose
 
@@ -19,8 +19,17 @@ class PoseGenerator(Node):
 
         self.time_pub = self.create_publisher(Float64, '/sim_time', 10)
 
-        self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
+        # self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
+        # self.heading_sub
+
+        self.heading_sub = self.create_subscription(Float32, '/ges/debugF', self.heading_callback, 10)
         self.heading_sub
+
+        self.xdot_sub = self.create_subscription(Float32, '/ges/xdot', self.xdot_callback, 10)
+        self.xdot_sub
+
+        self.ydot_sub = self.create_subscription(Float32, '/ges/ydot', self.ydot_callback, 10)
+        self.ydot_sub
 
         self.wind_sub = self.create_subscription(Vector3, '/wind/apparent', self.wind_callback,
             10)
@@ -38,15 +47,25 @@ class PoseGenerator(Node):
         self.mag_field = None
         self.navsat_msg = None
         self.sim_time = None
+        self.heading = None
+        self.ydot = 0.
+        self.xdot = 0.
         self.lat_array = [0, 0, 0, 0, 0]
         self.long_array = [0, 0, 0, 0, 0]
         self.dt = [0, 0, 0, 0, 0]
 
     def heading_callback(self, msg):
-        self.mag_field = msg.magnetic_field
+        #self.mag_field = msg.magnetic_field
+        self.heading = msg
 
     def wind_callback(self, msg):
         self._app_wind_msg = msg
+
+    def xdot_callback(self, msg):
+        self.xdot = msg
+
+    def ydot_callback(self, msg):
+        self.ydot = msg
 
     def navsat_callback(self, msg):
         self.navsat_msg = msg
@@ -58,23 +77,28 @@ class PoseGenerator(Node):
     def update(self):
 
         # Heading Section
-        if self.mag_field == None:
-            self.get_logger().info('no mag field message', once=True)
-            return
-        magnetic_field = self.mag_field
+        # if self.mag_field == None:
+        #     self.get_logger().info('no mag field message', once=True)
+        #     return
+        # magnetic_field = self.mag_field
         
+        # try:
+        #     p = (math.atan2(magnetic_field.y,magnetic_field.x) + math.pi/2)*180/math.pi
+        #     if p > 180:
+        #         q = p-360
+        #     else:
+        #         q = p
+        #     yaw = q
+        # except:
+        #     yaw = 0.
+
         try:
-            p = (math.atan2(magnetic_field.y,magnetic_field.x) + math.pi/2)*180/math.pi
-            if p > 180:
-                q = p-360
-            else:
-                q = p
-            yaw = q
+            yaw = 90 + np.rad2deg(self.heading.data)*-1
         except:
             yaw = 0.
         
         msg1 = VesselPose()
-        msg1.heading = yaw 
+        msg1.heading = (yaw + 180) % 360 - 180 
 
         # Apparent Wind Reading
         if self._app_wind_msg == None:
@@ -97,35 +121,36 @@ class PoseGenerator(Node):
 
 
         # Linear Velocity Section
-        if self.navsat_msg == None:
-            self.get_logger().info('no navsat message', once=True)
-            return
+        # if self.navsat_msg == None:
+        #     self.get_logger().info('no navsat message', once=True)
+        #     return
         
-        self.lat_array.append(self.navsat_msg.latitude)
-        self.lat_array.pop(0)
-        self.long_array.append(self.navsat_msg.longitude)
-        self.long_array.pop(0)
-        self.dt.append(self.sim_time)
-        self.dt.pop(0)
+        # self.lat_array.append(self.navsat_msg.latitude)
+        # self.lat_array.pop(0)
+        # self.long_array.append(self.navsat_msg.longitude)
+        # self.long_array.pop(0)
+        # self.dt.append(self.sim_time)
+        # self.dt.pop(0)
 
-        lat1 = self.lat_array[0]
-        lat2 = self.lat_array[4]
-        lon1 = self.long_array[0]
-        lon2 = self.long_array[4]
-        deltat = self.dt[4] - self.dt[0]
+        # lat1 = self.lat_array[0]
+        # lat2 = self.lat_array[4]
+        # lon1 = self.long_array[0]
+        # lon2 = self.long_array[4]
+        # deltat = self.dt[4] - self.dt[0]
         
-        R = 6378.137
-        dLat = lat2 * math.pi / 180 - lat1 * math.pi / 180
-        dLon = lon2 * math.pi / 180 - lon1 * math.pi / 180
-        a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(dLon/2) * math.sin(dLon/2)
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        d = R * c * 1000 # meters
+        # R = 6378.137
+        # dLat = lat2 * math.pi / 180 - lat1 * math.pi / 180
+        # dLon = lon2 * math.pi / 180 - lon1 * math.pi / 180
+        # a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(dLon/2) * math.sin(dLon/2)
+        # c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        # d = R * c * 1000 # meters
 
-        if deltat == 0:
-            msg.linear_v = 0
-        else:
-            msg1.linear_v = d / deltat
+        # if deltat == 0:
+        #     msg1.linear_v = 0
+        # else:
+        #     msg1.linear_v = d / deltat
 
+        msg1.linear_v = math.sqrt(self.xdot.data*self.xdot.data + self.ydot.data*self.ydot.data)
         self.pose_pub.publish(msg1)
 
 def main(args=None):

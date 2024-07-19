@@ -26,7 +26,7 @@ class DataRecorder(Node):
             10)
         self.navsat_sub  # prevent unused variable warning
 
-        self.heading_sub = self.create_subscription(MagneticField, '/magnetometer', self.heading_callback, 10)
+        self.heading_sub = self.create_subscription(Float32, '/ges/debugF', self.heading_callback, 10)
         self.heading_sub
 
         self.mainsail_sub = self.create_subscription(Float64, '/main_sail_joint/cmd_pos', self.mainsail_callback, 10)
@@ -45,14 +45,17 @@ class DataRecorder(Node):
         timer_period = 0.1  # 10 Hz
         self.timer = self.create_timer(timer_period, self.update)
 
-        # test_time = 30  # Time of run in sec
-        # self.test_timer = self.create_timer(test_time, self.update_course)
+        test_time = 30  # Time of run in sec
+        self.test_timer = self.create_timer(test_time, self.update_course)
 
         self.pose_msg = None
         self.navsat_msg = None
         self.power_msg = None
 
-        self.test_routine = [50., 60., 70., 90., 110., 130., 150., 170., -170., -150., -130., -110., -90., -70., -50.]
+        self.test_routine = [0.,5.,7.,10.,12.,15.,20.,25.,30.,35.]
+        # [0.,5.,7.,10.,12.,15.,20.,25.,30.,]
+        # [50., 70., 90., 110., 130., 150., 170.]
+        # [50., 70., 90., 110., 130., 150., 170., -170., -150., -130., -110., -90., -70., -50.]
         # [50., 60., 70., 80., 90., 100., 110., 120., 125., 130., 140., 150., 160.]
         # Test: Angle of Attack Sweep
         # [0.,5.,10.,15.,20.,25.,30.,35.,40.,45.]
@@ -67,7 +70,7 @@ class DataRecorder(Node):
 
         self.csv_file = open(self.csv_file_path, mode='w')
         self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Drag','Test Value','mx','my','SailAngle'])  # Write header to CSV file
+        self.csv_writer.writerow(['Time','Heading','AppWind','Velocity','Lat','Long','Power','Drag','Test Value','NA','NA','SailAngle'])  # Write header to CSV file
 
     def __del__(self):
         self.csv_file.close()
@@ -85,7 +88,7 @@ class DataRecorder(Node):
         self.drag_msg = msg
 
     def heading_callback(self, msg):
-        self.mag_field = msg.magnetic_field
+        self.true_heading = msg
 
     def mainsail_callback(self, msg):
         self.sailtrim = msg
@@ -137,12 +140,12 @@ class DataRecorder(Node):
             data8= 0.
 
         try:
-            data9 = self.mag_field.x
+            data9 = 0.
         except:
             data9= 0.
 
         try:
-            data10 = self.mag_field.y
+            data10 = 0.
         except:
             data10= 0.
 
@@ -162,8 +165,8 @@ class DataRecorder(Node):
 
         control_msg = Control()
         control_msg.autotrim = True
-        control_msg.angle_of_attack = 10. #self.test_routine[0]
-        control_msg.heading = self.test_routine[0]
+        control_msg.angle_of_attack = self.test_routine[0]
+        control_msg.heading = 70.#self.test_routine[0]
 
         self.get_logger().info("Changing...")
 

@@ -62,7 +62,8 @@ def generate_launch_description():
             '/ges/wattage@std_msgs/msg/Float32[gz.msgs.Float',
             '/ges/drag@std_msgs/msg/Float32[gz.msgs.Float',
             '/ges/xdot@std_msgs/msg/Float32[gz.msgs.Float',
-            '/ges/ydot@std_msgs/msg/Float32[gz.msgs.Float'
+            '/ges/ydot@std_msgs/msg/Float32[gz.msgs.Float',
+            '/ges/debugF@std_msgs/msg/Float32[gz.msgs.Float'
 
         ],
         remappings=[

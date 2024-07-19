@@ -177,6 +177,7 @@ void HydrokineticTurbinePrivate::Load(const EntityComponentManager &_ecm,
     return;
   }
 
+
   std::string linkName = _sdf->Get<std::string>("link_name");
   this->link = Link(this->model.LinkByName(_ecm, linkName));
   if (!this->link.Valid(_ecm))
@@ -188,6 +189,7 @@ void HydrokineticTurbinePrivate::Load(const EntityComponentManager &_ecm,
 
   if (_sdf->HasElement("axis"))
   {
+
     this->axis = _sdf->Get<std::string>("axis");
     gzmsg << "Turbine axis set to " << this->axis << std::endl;
   }
@@ -273,6 +275,14 @@ void HydrokineticTurbine::Configure(const Entity &_entity,
 
   this->dataPtr->pwrGenPub = this->dataPtr->node.Advertise<msgs::Float>(
       this->dataPtr->topicPwrGen, opts);
+
+  this->dataPtr->velXPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicXvel, opts);
+  this->dataPtr->velYPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicYvel, opts);
+  this->dataPtr->trbnDragPub = this->dataPtr->node.Advertise<msgs::Float>(
+      this->dataPtr->topicTrbnDrag, opts);
+
   if (this->dataPtr->debug)
   {
     this->dataPtr->debugPubS = this->dataPtr->node.Advertise<msgs::StringMsg>(
@@ -373,7 +383,7 @@ void HydrokineticTurbine::PreUpdate(
   gz::math::Vector3d force(this->dataPtr->modelPose.Rot().RotateVector(drag));
   this->dataPtr->link.AddWorldWrench(_ecm, force, gz::math::Vector3d(0,0,0));
   //gzmsg << "zeta: " << this->dataPtr->zeta << "; unitDrag: " << this->dataPtr->unitTurbineDragForce << std::endl;
-
+  // gzmsg << "Test: " << y << std::endl;
 
   // Set up two publishers to monitor values for debugging, in String or Float format.
   // Modify as needed to export the desired variables or information.
