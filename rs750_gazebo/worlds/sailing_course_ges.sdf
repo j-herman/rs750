@@ -83,7 +83,7 @@
 
     <!-- Wind (ENU) -->
     <wind>
-      <linear_velocity>0 -12 0</linear_velocity>
+      <linear_velocity>0 -10 0</linear_velocity>
     </wind>
 
     <include>
